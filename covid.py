@@ -22,9 +22,11 @@ dfr_all = dfr.loc[dfr.cl_age90 == 0].copy()
 dfr_all.loc[:, "positivity"] = dfr_all.P.values/dfr_all["T"].values
 dfr_all.loc[:, "daynam"] = dfr_all.jour.dt.day_name()
 
-fig, ax = plt.subplots(1, 1, figsize=(8,5))
+ndays = 50
 
-plt.plot(dfr_all.jour.values, dfr_all.positivity.values)
+fig, [ax1, ax2] = plt.subplots(2, 1, figsize=(10,8))
+
+ax1.plot(dfr_all.jour.values[-ndays:], dfr_all.positivity.values[-ndays:])
 
 for i in range(1, 50):
     x = dfr_all.jour.values[-i]
@@ -32,20 +34,40 @@ for i in range(1, 50):
     s = dfr_all.daynam.values[-i]
     
     if s in ["Friday"]:
-        plt.text(x, 0.96*y, s)
-        plt.scatter(x, y, c="blue")
+        ax1.text(x, 0.96*y, s)
+        ax1.scatter(x, y, c="blue")
     elif s in ["Monday"]:
-        plt.text(x, 1.02*y, s)
-        plt.scatter(x, y, c="green")
+        ax1.text(x, 1.02*y, s)
+        ax1.scatter(x, y, c="green")
         
 
-fig.autofmt_xdate()
-plt.xlim(dfr_all.jour.values[-50], dfr_all.jour.values[-1]+  np.timedelta64(1,'D'))
-plt.grid(color="grey", linestyle=":")
-plt.ylim( dfr_all.positivity.values[-50:].min()*0.9 , dfr_all.positivity.values[-50:].max()*1.1)
+ax2.plot(dfr_all.jour.values[-ndays:], dfr_all.positivity.values[-ndays:], label="true dates")
+ax2.plot(dfr_all.jour.values[-ndays-7:-7], dfr_all.positivity.values[-ndays:], label="one week shift")
+ax2.legend()
+
+
+
+for ax in [ax1, ax2]:
+  ax.set_xlim(dfr_all.jour.values[-50], dfr_all.jour.values[-1]+  np.timedelta64(1,'D'))
+  ax.grid(color="grey", linestyle=":")
+  ax.set_ylim( dfr_all.positivity.values[-50:].min()*0.9 , dfr_all.positivity.values[-50:].max()*1.1)
+  ax.set_ylabel("Positivity (# Positifs/ # Tests)")  
+  ax.set_xlabel("Date")
+  
+#fig.autofmt_xdate()
+for ax in fig.get_axes():
+    if ax.is_last_row():
+        for label in ax.get_xticklabels():
+            label.set_ha('right')
+            label.set_rotation(30.)
+    else:
+        for label in ax.get_xticklabels():
+            label.set_visible(False)
+        ax.set_xlabel('')
+  
 now = datetime.now()
-plt.title("Evolution of the Positivity as fonction of date \n made on "  + now.strftime("%A %d/%m/%Y") )
-plt.ylabel("Positivity (# Positifs/ # Tests)")
-plt.xlabel("Date")
+ax1.set_title("Evolution of the Positivity as fonction of date \n made on "  + now.strftime("%A %d/%m/%Y") )
+
+
 
 plt.savefig("covid_positivity_days.png", dpi=200)
